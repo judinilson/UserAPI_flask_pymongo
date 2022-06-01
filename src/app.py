@@ -48,6 +48,36 @@ def get_user(id):
     return Response(response, mimetype="application/json")
 
 
+@app.route('/api/users/<id>', methods=["DELETE"])
+def delete_user(id):
+    db.users.delete_one({'_id': ObjectId(id), })
+    response = jsonify({'message': ' User: ' + id + ' has been deleted'})
+    response.status_code = 200
+    return response
+
+
+@app.route('/api/users/<_id>', methods=["PUT"])
+def update_user(_id):
+    username = request.json['username']
+    email = request.json['email']
+    password = request.json['password']
+    if username and email and password and _id:
+        hashed_password = generate_password_hash(password)
+        db.users.update_one({
+            '_id': ObjectId(_id)},
+            {'$set':
+             {'username': username,
+              'email': email,
+              'password': hashed_password
+              }
+             })
+        response = jsonify({'message': 'User ' + _id + 'Updated successfully'})
+        response.status_code = 200
+        return response
+    else:
+        return not_found()
+
+
 @app.errorhandler(404)
 def not_found(error=None):
     response = jsonify({
