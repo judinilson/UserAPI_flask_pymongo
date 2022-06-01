@@ -1,6 +1,8 @@
-from flask import Flask, request
+from flask import Flask, jsonify, request, Response
 from flask_pymongo import PyMongo
 from werkzeug.security import generate_password_hash, check_password_hash
+from bson import json_util
+from bson.objectid import ObjectId
 
 app = Flask(__name__)
 
@@ -29,7 +31,31 @@ def create_user():
         }
         return response
     else:
-        {'message': 'received'}
+        return not_found()
+
+
+@app.route('/api/users',  methods=["GET"])
+def get_users():
+    users = db.users.find()
+    response = json_util.dumps(users)
+    return Response(response, mimetype="application/json")
+
+
+@app.route('/api/users/<id>', methods=["GET"])
+def get_user(id):
+    user = db.users.find_one({'_id': ObjectId(id), })
+    response = json_util.dumps(user)
+    return Response(response, mimetype="application/json")
+
+
+@app.errorhandler(404)
+def not_found(error=None):
+    response = jsonify({
+        'message': 'Resource not found: ' + request.url,
+        'status': 404
+    })
+    response.status_code = 404
+    return response
 
 
 if __name__ == '__main__':
